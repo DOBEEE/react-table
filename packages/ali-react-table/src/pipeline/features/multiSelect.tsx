@@ -17,6 +17,8 @@ export interface MultiSelectFeatureOptions {
   /** 受控用法：上一次操作对应的 rowKey */
   lastKey?: string
 
+  getCheckboxProps?(row: any, rowIndex: number): any;
+  getHeaderCheckboxProps?(): any;
   /** 受控用法：状态改变回调  */
   onChange?: (
     nextValue: string[],
@@ -83,7 +85,7 @@ export function multiSelect(opts: MultiSelectFeatureOptions = {}) {
     const set = new Set(value)
     const isAllChecked = allKeys.length > 0 && allKeys.every((key) => set.has(key))
     const isAnyChecked = allKeys.some((key) => set.has(key))
-
+    const headerCheckboxProps = opts.getHeaderCheckboxProps ? opts.getHeaderCheckboxProps() : {};
     const defaultCheckboxColumnTitle = (
       <Checkbox
         checked={isAllChecked}
@@ -95,6 +97,7 @@ export function multiSelect(opts: MultiSelectFeatureOptions = {}) {
             onChange(arrayUtils.merge(value, allKeys), '', allKeys, 'check-all')
           }
         }}
+        {...headerCheckboxProps}
       />
     )
 
@@ -125,6 +128,8 @@ export function multiSelect(opts: MultiSelectFeatureOptions = {}) {
       render(_: any, row: any, rowIndex: number) {
         const key = internals.safeGetRowKey(primaryKey, row, rowIndex)
         const checked = set.has(key)
+        let _props = opts.getCheckboxProps ? opts.getCheckboxProps(row, rowIndex) : {};
+
         return (
           <Checkbox
             checked={checked}
@@ -145,6 +150,7 @@ export function multiSelect(opts: MultiSelectFeatureOptions = {}) {
                   }
                 : undefined
             }
+            {..._props}
           />
         )
       },
