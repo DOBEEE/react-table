@@ -206,5 +206,5 @@ export function useTablePipeline(ctx?: Partial<TablePipelineCtx>) {
   const [state, setState] = useState<any>({})
   return useMemo(() => {
       return new TablePipeline({ state, setState, ctx });
-  }, [ctx]);
+  }, []);
 }
