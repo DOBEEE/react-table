@@ -1,6 +1,6 @@
-import React from 'react'
-import { fromEvent } from 'rxjs'
-import * as op from 'rxjs/operators'
+import React, { useState, useRef } from 'react'
+// import { fromEvent } from 'rxjs'
+// import * as op from 'rxjs/operators'
 import styled from 'styled-components'
 import { internals } from '../../internals'
 import { collectNodes, makeRecursiveMapper, mergeCellProps } from '../../utils'
@@ -17,7 +17,7 @@ const ResizeHandle = styled.span`
   right: -5px;
   width: 10px;
   cursor: col-resize;
-  z-index: 1;
+  z-index: 10;
   transition: background-color 200ms;
 
   background: ${(props: any) => {
@@ -29,7 +29,58 @@ const ResizeHandle = styled.span`
       return props['var-handleHoverBackground']
     }};
   }
-`
+`;
+const ResizeComp = ({opts, startIndex, endIndex, sizes, minSize, maxSize, onChangeSizes}: any) => {
+  const startResize = (startIndex: number, endIndex: number, e: React.MouseEvent<HTMLSpanElement>) => {
+    // lineDom.current.style.height = '200px';
+    e.preventDefault();
+    const startX = e.clientX
+    const target = e.target as HTMLSpanElement;
+    // target.style.height = '200px';
+    target.style.background = opts.handleHoverBackground;
+    const moveHandler = (e: any) => {
+      e.preventDefault();
+      const movingX = e.clientX
+      const deltaSum = movingX - startX
+      target.style.right = -deltaSum + 'px';
+    }
+    const upHandler = (e: any) => {
+      window.removeEventListener('mousemove', moveHandler);
+      window.removeEventListener('mouseup', upHandler);
+      // target.style.height = 'auto';
+      target.style.right = '-3px';
+      target.style.background = opts.handleBackground;
+      const movingX = e.clientX
+      const nextSizes = sizes.slice()
+      const deltaSum = movingX - startX
+      const sizeSum = sizes.slice(startIndex, endIndex).reduce((sum: any, s: any) => sum + s, 0)
+      let deltaRemaining = deltaSum
+
+      for (let colIndex = startIndex; colIndex < endIndex - 1; colIndex++) {
+        const startSize = sizes[colIndex]
+        // 将每一列的宽度变化量 都四舍五入至 整数，不然看起来非常难受
+        const colDelta = Math.round(deltaSum * (startSize / sizeSum))
+        nextSizes[colIndex] = clamp(minSize, startSize + colDelta, maxSize)
+        deltaRemaining -= colDelta
+      }
+      // 因为前面的列宽都进行了四舍五入，最后一列的变化量需要使用 deltaRemaining 以避免误差
+      nextSizes[endIndex - 1] = clamp(minSize, sizes[endIndex - 1] + deltaRemaining, maxSize)
+      onChangeSizes(nextSizes);
+    }
+    window.addEventListener('mousemove', moveHandler);
+    window.addEventListener('mouseup', upHandler);
+  }
+  return (
+    <>
+      <ResizeHandle
+        className="resize-handle"
+        var-handleBackground={opts.handleBackground}
+        var-handleHoverBackground={opts.handleHoverBackground}
+        onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => startResize(startIndex, endIndex, e)}
+      />
+    </>
+  )
+}
 
 export interface ColumnResizeFeatureOptions {
   /** 非受控用法：默认的列宽数组 */
@@ -83,57 +134,57 @@ export function columnResize(opts: ColumnResizeFeatureOptions = {}) {
       opts.onChangeSizes?.(nextSizes)
     }
 
-    const startResize = (startIndex: number, endIndex: number, e: React.MouseEvent<HTMLSpanElement>) => {
-      const startX = e.clientX
-      const target = e.target as HTMLSpanElement
+    // const startResize = (startIndex: number, endIndex: number, e: React.MouseEvent<HTMLSpanElement>) => {
+    //   const startX = e.clientX
+    //   const target = e.target as HTMLSpanElement
 
-      const nextSizes$ = fromEvent<MouseEvent>(window, 'mousemove').pipe(
-        op.takeUntil(fromEvent(window, 'mouseup')),
-        op.map((e) => {
-          const movingX = e.clientX
-          const nextSizes = sizes.slice()
-          const deltaSum = movingX - startX
-          const sizeSum = sizes.slice(startIndex, endIndex).reduce((sum, s) => sum + s, 0)
-          let deltaRemaining = deltaSum
+    //   const nextSizes$ = fromEvent<MouseEvent>(window, 'mousemove').pipe(
+    //     op.takeUntil(fromEvent(window, 'mouseup')),
+    //     op.map((e) => {
+    //       const movingX = e.clientX
+    //       const nextSizes = sizes.slice()
+    //       const deltaSum = movingX - startX
+    //       const sizeSum = sizes.slice(startIndex, endIndex).reduce((sum, s) => sum + s, 0)
+    //       let deltaRemaining = deltaSum
 
-          for (let colIndex = startIndex; colIndex < endIndex - 1; colIndex++) {
-            const startSize = sizes[colIndex]
-            // 将每一列的宽度变化量 都四舍五入至 整数，不然看起来非常难受
-            const colDelta = Math.round(deltaSum * (startSize / sizeSum))
-            nextSizes[colIndex] = clamp(minSize, startSize + colDelta, maxSize)
-            deltaRemaining -= colDelta
-          }
-          // 因为前面的列宽都进行了四舍五入，最后一列的变化量需要使用 deltaRemaining 以避免误差
-          nextSizes[endIndex - 1] = clamp(minSize, sizes[endIndex - 1] + deltaRemaining, maxSize)
+    //       for (let colIndex = startIndex; colIndex < endIndex - 1; colIndex++) {
+    //         const startSize = sizes[colIndex]
+    //         // 将每一列的宽度变化量 都四舍五入至 整数，不然看起来非常难受
+    //         const colDelta = Math.round(deltaSum * (startSize / sizeSum))
+    //         nextSizes[colIndex] = clamp(minSize, startSize + colDelta, maxSize)
+    //         deltaRemaining -= colDelta
+    //       }
+    //       // 因为前面的列宽都进行了四舍五入，最后一列的变化量需要使用 deltaRemaining 以避免误差
+    //       nextSizes[endIndex - 1] = clamp(minSize, sizes[endIndex - 1] + deltaRemaining, maxSize)
 
-          return nextSizes
-        }),
-      )
+    //       return nextSizes
+    //     }),
+    //   )
 
-      let prevUserSelect = ''
-      let docElemStyle: CSSStyleDeclaration
+    //   let prevUserSelect = ''
+    //   let docElemStyle: CSSStyleDeclaration
 
-      if (disableUserSelectWhenResizing) {
-        docElemStyle = document.documentElement.style
-        prevUserSelect = docElemStyle.userSelect
-        docElemStyle.userSelect = 'none'
-      }
-      if (opts.handleActiveBackground) {
-        target.style.background = opts.handleActiveBackground
-      }
+    //   if (disableUserSelectWhenResizing) {
+    //     docElemStyle = document.documentElement.style
+    //     prevUserSelect = docElemStyle.userSelect
+    //     docElemStyle.userSelect = 'none'
+    //   }
+    //   if (opts.handleActiveBackground) {
+    //     target.style.background = opts.handleActiveBackground
+    //   }
 
-      nextSizes$.subscribe({
-        next: onChangeSizes,
-        complete() {
-          if (disableUserSelectWhenResizing) {
-            docElemStyle.userSelect = prevUserSelect
-          }
-          if (opts.handleActiveBackground) {
-            target.style.background = ''
-          }
-        },
-      })
-    }
+    //   nextSizes$.subscribe({
+    //     next: onChangeSizes,
+    //     complete() {
+    //       if (disableUserSelectWhenResizing) {
+    //         docElemStyle.userSelect = prevUserSelect
+    //       }
+    //       if (opts.handleActiveBackground) {
+    //         target.style.background = ''
+    //       }
+    //     },
+    //   })
+    // }
 
     return pipeline.mapColumns(
       makeRecursiveMapper((col, { startIndex, endIndex }) => {
@@ -145,12 +196,15 @@ export function columnResize(opts: ColumnResizeFeatureOptions = {}) {
           title: (
             <>
               {prevTitle}
-              <ResizeHandle
+              <ResizeComp
+                opts={opts} startIndex={startIndex} endIndex={endIndex} sizes={sizes} minSize={minSize} maxSize={maxSize} onChangeSizes={onChangeSizes}
+              />
+              {/* <ResizeHandle
                 className="resize-handle"
                 var-handleBackground={opts.handleBackground}
                 var-handleHoverBackground={opts.handleHoverBackground}
                 onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => startResize(startIndex, endIndex, e)}
-              />
+              /> */}
             </>
           ),
           headerCellProps: mergeCellProps(col.headerCellProps, {

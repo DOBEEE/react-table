@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { BaseTableProps, PrimaryKey } from '../base-table'
 import { ArtColumn, TableTransform, Transform } from '../interfaces'
 import { mergeCellProps } from '../utils'
@@ -114,9 +114,9 @@ export class TablePipeline {
 
   /** 设置流水线的输入数据 */
   input(input: { dataSource: any[]; columns: ArtColumn[] }) {
-    if (this._dataSource != null || this._columns != null) {
-      throw new Error('input 不能调用两次')
-    }
+    // if (this._dataSource != null || this._columns != null) {
+    //   throw new Error('input 不能调用两次')
+    // }
 
     this._dataSource = input.dataSource
     this._columns = input.columns
@@ -204,5 +204,7 @@ export class TablePipeline {
 
 export function useTablePipeline(ctx?: Partial<TablePipelineCtx>) {
   const [state, setState] = useState<any>({})
-  return new TablePipeline({ state, setState, ctx })
+  return useMemo(() => {
+      return new TablePipeline({ state, setState, ctx });
+  }, [ctx]);
 }

@@ -102,7 +102,7 @@ export function multiSelect(opts: MultiSelectFeatureOptions = {}) {
     )
 
     const checkboxColumn: ArtColumn = {
-      name: '是否选中',
+      name: '__select__',
       title: defaultCheckboxColumnTitle,
       width: 50,
       align: 'center',
@@ -156,7 +156,7 @@ export function multiSelect(opts: MultiSelectFeatureOptions = {}) {
       },
     }
 
-    const nextColumns = pipeline.getColumns().slice()
+    const nextColumns = pipeline.getColumns().slice().filter(i => i.name !== '__select__');
     const checkboxPlacement = opts.checkboxPlacement ?? 'start'
     if (checkboxPlacement === 'start') {
       nextColumns.unshift(checkboxColumn)
