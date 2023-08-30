@@ -67,6 +67,7 @@ export function multiSelect(opts: MultiSelectFeatureOptions = {}) {
 
     const dataSource = pipeline.getDataSource()
 
+
     /** dataSource 中包含的所有 keys */
     const fullKeySet = new Set<string>()
 
@@ -155,50 +156,48 @@ export function multiSelect(opts: MultiSelectFeatureOptions = {}) {
         )
       },
     }
-
-    const nextColumns = pipeline.getColumns().slice().filter(i => i.name !== '__select__');
-    const checkboxPlacement = opts.checkboxPlacement ?? 'start'
-    if (checkboxPlacement === 'start') {
-      nextColumns.unshift(checkboxColumn)
-    } else {
-      nextColumns.push(checkboxColumn)
-    }
-    pipeline.columns(nextColumns)
-
-    pipeline.appendRowPropsGetter((row, rowIndex) => {
-      const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
-      if (!fullKeySet.has(rowKey)) {
-        // rowKey 不在 fullKeySet 中说明这一行是在 multiSelect 之后才生成的，multiSelect 不对之后生成的行进行处理
-        return
+    pipeline.mapColumns((cols: ArtColumn[]): ArtColumn[] => {
+      const nextColumns = cols.slice().filter(i => i.name !== '__select__');
+      const checkboxPlacement = opts.checkboxPlacement ?? 'start'
+      if (checkboxPlacement === 'start') {
+        nextColumns.unshift(checkboxColumn)
+      } else {
+        nextColumns.push(checkboxColumn)
       }
-
-      let style: any = {}
-      let className: string
-      let onClick: any
-
-      const checked = set.has(rowKey)
-      if (opts.highlightRowWhenSelected && checked) {
-        className = 'highlight'
-      }
-
-      if (clickArea === 'row') {
-        const disabled = isDisabled(row, rowIndex)
-        if (!disabled) {
-          style.cursor = 'pointer'
-          onClick = (e: MouseEvent) => {
-            if (opts.stopClickEventPropagation) {
-              e.stopPropagation()
+      pipeline.appendRowPropsGetter((row, rowIndex) => {
+        const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
+        if (!fullKeySet.has(rowKey)) {
+          // rowKey 不在 fullKeySet 中说明这一行是在 multiSelect 之后才生成的，multiSelect 不对之后生成的行进行处理
+          return
+        }
+  
+        let style: any = {}
+        let className: string
+        let onClick: any
+  
+        const checked = set.has(rowKey)
+        if (opts.highlightRowWhenSelected && checked) {
+          className = 'highlight'
+        }
+  
+        if (clickArea === 'row') {
+          const disabled = isDisabled(row, rowIndex)
+          if (!disabled) {
+            style.cursor = 'pointer'
+            onClick = (e: MouseEvent) => {
+              if (opts.stopClickEventPropagation) {
+                e.stopPropagation()
+              }
+              onCheckboxChange(checked, rowKey, e.shiftKey)
             }
-            onCheckboxChange(checked, rowKey, e.shiftKey)
           }
         }
-      }
-
-      return { className, style, onClick }
-    })
-
-    return pipeline
-
+  
+        return { className, style, onClick }
+      })
+      return nextColumns;
+      
+    }, 'select')
     function onCheckboxChange(prevChecked: boolean, key: string, batch: boolean) {
       let batchKeys = [key]
 
@@ -215,5 +214,9 @@ export function multiSelect(opts: MultiSelectFeatureOptions = {}) {
         onChange(arrayUtils.merge(value, batchKeys), key, batchKeys, 'check')
       }
     }
+
+    return pipeline
+
+    
   }
 }

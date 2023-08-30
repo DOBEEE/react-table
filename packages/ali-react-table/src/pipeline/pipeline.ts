@@ -56,7 +56,7 @@ export class TablePipeline {
     components: {},
     indents: TablePipeline.defaultIndents,
   }
-
+  private mapColumnsQueues: any[]
   private readonly state: any
   private readonly setState: (fn: (prevState: any) => any, stateKey: string, partialState: any, extraInfo?: any) => any
 
@@ -72,6 +72,7 @@ export class TablePipeline {
     this.state = state
     this.setState = setState
     Object.assign(this.ctx, ctx)
+    this.mapColumnsQueues = [];
   }
 
   appendRowPropsGetter(getter: RowPropsGetter) {
@@ -134,7 +135,10 @@ export class TablePipeline {
 
   /** 设置 columns */
   columns(cols: ArtColumn[]) {
-    this._columns = cols
+    this._columns = cols;
+    this.mapColumnsQueues.forEach(i => {
+      this._columns = i.value(this.getColumns());
+    });
     return this
   }
 
@@ -175,8 +179,22 @@ export class TablePipeline {
   }
 
   /** 转换 columns */
-  mapColumns(mapper: Transform<ArtColumn[]>) {
-    return this.columns(mapper(this.getColumns()))
+  mapColumns(mapper: Transform<ArtColumn[]>, from?: string) {
+    const oldIdx = this.mapColumnsQueues.findIndex(i => i.key === from);
+    if (from && oldIdx !== -1) {
+      this.mapColumnsQueues[oldIdx] = {
+        key: from,
+        value: mapper
+      };
+    } else {
+      this.mapColumnsQueues.push({
+        key: from || this.mapColumnsQueues.length + 1,
+        value: mapper
+      });
+    }
+    
+    this._columns = mapper(this.getColumns());
+    return this;
   }
 
   /** 获取 BaseTable 的 props，结果中包含 dataSource/columns/primaryKey/getRowProps 四个字段 */
