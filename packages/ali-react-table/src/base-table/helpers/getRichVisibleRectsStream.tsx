@@ -36,10 +36,11 @@ function accumulateScrollOffset(
   let result = 0
   let elem = start
   while (elem != null) {
-    result += elem[scrollOffsetKey]
+    // 如果是 html标签 作为start 则直接返回，不需要再加一次
     if (elem === stop || (isWindow(stop) && isHtmlOrBody(elem))) {
       break
     }
+    result += elem[scrollOffsetKey]
     elem = elem.parentElement
   }
 
@@ -73,21 +74,19 @@ function getRelativeLayoutRect(
   while (elem != null && elem != base) {
     deltaY += elem.offsetTop
     deltaX += elem.offsetLeft
-
     const offsetParent = getOffsetParent(elem) as HTMLElement | Window
     deltaY -= accumulateScrollOffset(elem.parentElement, offsetParent, 'scrollTop')
     deltaX -= accumulateScrollOffset(elem.parentElement, offsetParent, 'scrollLeft')
-
     if (isWindow(offsetParent)) {
+      
       break
     }
-
+    
     deltaY += offsetParent.clientTop
     deltaX += offsetParent.clientLeft
 
     elem = offsetParent
   }
-
   return {
     top: deltaY,
     bottom: deltaY + target.offsetHeight,
@@ -168,7 +167,7 @@ export function getRichVisibleRectsStream(
       // target 的第一个滚动父元素，我们认为这就是虚拟滚动发生的地方
       // 即虚拟滚动不考虑「更上层元素发生滚动」的情况
       const scrollParent: HTMLElement | Window = getScrollParent(target)
-
+      // virtualDebugLabel = true;
       // target 和 scrollParent 的共同 offset 祖先，作为布局尺寸计算时的参照元素
       const commonOffsetAncestor: HTMLElement | Window = findCommonOffsetAncestor(target, scrollParent)
 
@@ -176,7 +175,7 @@ export function getRichVisibleRectsStream(
     }),
     op.distinctUntilChanged(shallowEqual),
     op.tap((structure) => {
-      if (virtualDebugLabel) {
+      if (!virtualDebugLabel) {
         console.log(
           `%c[ali-react-table STRUCTURE ${virtualDebugLabel}]`,
           'color: #4f9052; font-weight: bold',
@@ -218,7 +217,7 @@ export function getRichVisibleRectsStream(
       )
     }),
     op.tap((rects) => {
-      if (virtualDebugLabel) {
+      if (!virtualDebugLabel) {
         console.log(
           `%c[ali-react-table RECTS ${virtualDebugLabel}]`,
           'color: #4f9052; font-weight: bold',
