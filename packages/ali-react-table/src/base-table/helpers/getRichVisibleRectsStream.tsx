@@ -175,7 +175,7 @@ export function getRichVisibleRectsStream(
     }),
     op.distinctUntilChanged(shallowEqual),
     op.tap((structure) => {
-      if (!virtualDebugLabel) {
+      if (virtualDebugLabel) {
         console.log(
           `%c[ali-react-table STRUCTURE ${virtualDebugLabel}]`,
           'color: #4f9052; font-weight: bold',
@@ -217,7 +217,7 @@ export function getRichVisibleRectsStream(
       )
     }),
     op.tap((rects) => {
-      if (!virtualDebugLabel) {
+      if (virtualDebugLabel) {
         console.log(
           `%c[ali-react-table RECTS ${virtualDebugLabel}]`,
           'color: #4f9052; font-weight: bold',
