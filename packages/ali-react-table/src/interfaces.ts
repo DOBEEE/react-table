@@ -14,6 +14,9 @@ export interface ArtColumnStaticPart {
   /** 列标题的展示名称；在页面中进行展示时，该字段将覆盖 name 字段 */
   title?: ReactNode
 
+  /** 列的宽度是否可调整 */
+  resizeComp?: ReactNode
+
   /** 列的宽度，如果该列是锁定的，则宽度为必传项 */
   width?: number
 

@@ -213,7 +213,7 @@ export default function TableHeader({ info }: { info: RenderInfo }) {
               ...positionStyle,
             }}
           >
-            {col.title ?? col.name}
+            {col.title ?? col.name}{col.resizeComp && col.resizeComp}
           </th>
         )
       } else {

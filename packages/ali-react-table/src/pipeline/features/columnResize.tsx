@@ -193,19 +193,10 @@ export function columnResize(opts: ColumnResizeFeatureOptions = {}) {
         return {
           ...col,
           width: sizes[startIndex],
-          title: (
-            <>
-              {prevTitle}
-              <ResizeComp
-                opts={opts} startIndex={startIndex} endIndex={endIndex} sizes={sizes} minSize={minSize} maxSize={maxSize} onChangeSizes={onChangeSizes}
-              />
-              {/* <ResizeHandle
-                className="resize-handle"
-                var-handleBackground={opts.handleBackground}
-                var-handleHoverBackground={opts.handleHoverBackground}
-                onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => startResize(startIndex, endIndex, e)}
-              /> */}
-            </>
+          title: prevTitle,
+          resizeComp: (
+            <ResizeComp
+              opts={opts} startIndex={startIndex} endIndex={endIndex} sizes={sizes} minSize={minSize} maxSize={maxSize} onChangeSizes={onChangeSizes} />
           ),
           headerCellProps: mergeCellProps(col.headerCellProps, {
             style: {
@@ -214,7 +205,7 @@ export function columnResize(opts: ColumnResizeFeatureOptions = {}) {
             },
           }),
         }
-      }),
+      }), 'column-resize'
     )
   }
 }

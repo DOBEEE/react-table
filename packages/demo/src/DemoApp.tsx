@@ -1,8 +1,8 @@
-import { ArtColumn, BaseTable } from 'ali-react-table'
-import { Button, Radio, Switch, Typography } from 'antd'
+import { ArtColumn, BaseTable ,useTablePipeline, features } from 'ali-react-table'
+import { Button, Radio, Switch, Typography, Checkbox } from 'antd'
 import cx from 'classnames'
 import numeral from 'numeral'
-import React, { useEffect, useReducer, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import styled, { css } from 'styled-components'
 import { AntdBaseTable, HippoBaseTable } from 'website/src/assets'
 
@@ -133,7 +133,7 @@ export function DemoApp() {
       updateTime: '2020-02-29',
     },
   ]
-
+  const [widths, setWidths] = useState([]);
   const [hasHeader, setHasHeader] = useState(true)
   const [isStickyHeader, setIsStickyHeader] = useState(true)
   const [hasData, setHasData] = useState(true)
@@ -190,7 +190,55 @@ export function DemoApp() {
   if (typeof document === 'undefined') {
     return null
   }
-
+  const columns=useMemo(() => [
+    { code: 'provinceName', name: '省份', width: 150, title: <div>123</div>, lock: leftLock },
+    { code: 'cityName', name: '城市', width: 150 },
+    ...repeat<ArtColumn>(
+      [
+        { code: 'confirmedCount', name: '确诊', width: 100, render: amount, align: 'right' },
+        { code: 'curedCount', name: '治愈', width: 100, render: amount, align: 'right' },
+        { code: 'deadCount', name: '死亡', width: 100, render: amount, align: 'right' },
+      ],
+      useBigData ? 40 : 10,
+    ),
+    { code: 'updateTime', name: '更新时间', width: 150, lock: rightLock },
+  ], [])
+  const pipeline = useTablePipeline({components: {Checkbox}}).input({ dataSource ,columns});
+  useEffect(() => {
+    console.log(22222);
+    pipeline.columns(columns)
+  }, [columns]);
+  useEffect(() => {
+    pipeline.dataSource(dataSource)
+  }, [dataSource]);
+  
+  pipeline.primaryKey('confirmedCount') // 每一行数据由 id 字段唯一标记
+    .use(
+      features.multiSelect({
+        highlightRowWhenSelected: true,
+        defaultValue: ['1', '2'],
+        defaultLastKey: '1',
+        checkboxPlacement: 'start',
+        checkboxColumn: { lock: true },
+        clickArea: 'cell',
+      }),
+    )
+  pipeline.use(
+    features.columnResize({
+      // mode: 'followDrag',
+      sizes: widths,
+      minSize: 30,
+      fallbackSize: 120,
+      maxSize: 500,
+      handleBackground: 'transparent',
+      handleHoverBackground: '#ccc',
+      handleActiveBackground: '#aaa',
+      onChangeSizes: (nextSizes: number[]) => {
+        setWidths(nextSizes);
+      //   updateWidth(nextSizes);
+      },
+    })
+  );
   return (
     <AppDivAppDiv ref={appDivRef} className={cx({ 'has-custom-scrollbar': hasCustomScrollbar })}>
       <div style={{ background: '#f2f2f2', padding: 16 }}>
@@ -302,6 +350,7 @@ export function DemoApp() {
       </div>
 
       <BaseTableComponent
+      {...pipeline.getProps()}
         className={cx('bordered', 'compact', { dark: theme.includes('dark') })}
         isStickyHeader={isStickyHeader}
         isStickyFooter={isStickyFooter}
@@ -311,19 +360,19 @@ export function DemoApp() {
         hasStickyScroll={hasStickyScroll}
         stickyScrollHeight={hasCustomScrollbar ? 10 : 'auto'}
         hasHeader={hasHeader}
-        columns={[
-          { code: 'provinceName', name: '省份', width: 150, lock: leftLock },
-          { code: 'cityName', name: '城市', width: 150 },
-          ...repeat<ArtColumn>(
-            [
-              { code: 'confirmedCount', name: '确诊', width: 100, render: amount, align: 'right' },
-              { code: 'curedCount', name: '治愈', width: 100, render: amount, align: 'right' },
-              { code: 'deadCount', name: '死亡', width: 100, render: amount, align: 'right' },
-            ],
-            useBigData ? 40 : 10,
-          ),
-          { code: 'updateTime', name: '更新时间', width: 150, lock: rightLock },
-        ]}
+        // columns={[
+        //   { code: 'provinceName', name: '省份', width: 150, lock: leftLock },
+        //   { code: 'cityName', name: '城市', width: 150 },
+        //   ...repeat<ArtColumn>(
+        //     [
+        //       { code: 'confirmedCount', name: '确诊', width: 100, render: amount, align: 'right' },
+        //       { code: 'curedCount', name: '治愈', width: 100, render: amount, align: 'right' },
+        //       { code: 'deadCount', name: '死亡', width: 100, render: amount, align: 'right' },
+        //     ],
+        //     useBigData ? 40 : 10,
+        //   ),
+        //   { code: 'updateTime', name: '更新时间', width: 150, lock: rightLock },
+        // ]}
         dataSource={hasData ? (useBigData ? repeat(dataSource, 5) : dataSource) : []}
         footerDataSource={hasFooter ? footerDataSource : []}
       />

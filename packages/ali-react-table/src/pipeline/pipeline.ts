@@ -182,17 +182,20 @@ export class TablePipeline {
   mapColumns(mapper: Transform<ArtColumn[]>, from?: string) {
     const oldIdx = this.mapColumnsQueues.findIndex(i => i.key === from);
     if (from && oldIdx !== -1) {
-      this.mapColumnsQueues[oldIdx] = {
-        key: from,
-        value: mapper
-      };
+      if (from !== 'column-resize') {
+        this.mapColumnsQueues[oldIdx] = {
+          key: from,
+          value: mapper
+        };
+      }
     } else {
-      this.mapColumnsQueues.push({
-        key: from || this.mapColumnsQueues.length + 1,
-        value: mapper
-      });
+      if (from !== 'column-resize') {
+        this.mapColumnsQueues.push({
+          key: from || this.mapColumnsQueues.length + 1,
+          value: mapper
+        });
+      }
     }
-    
     this._columns = mapper(this.getColumns());
     return this;
   }
